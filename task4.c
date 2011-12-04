@@ -1,74 +1,92 @@
 #include <stdio.h>
 
-char* strings[]={
-"org 0x7c00",
-"xor ax, ax",
-"cli",
-"mov ds, ax",
-"mov es, ax",
-"mov ss, ax",
-"sti",
-"mov ah, 0x02",
-"mov al, [sectors]",
-"mov cx, 0x0002",
-"mov bx, str2",
-"int 0x13",
+char* code="org 0x7c00\n"
+"xor ax, ax\n"
+"cli\n"
+"mov ds, ax\n"
+"mov es, ax\n"
+"mov ss, ax\n"
+"pushf\n"
+"xor ah, ah\n"
+"push ax\n"
+"popf\n"
+"pushf\n"
+"pop ax\n"
+"and ah, 0xF0\n"
+"cmp ah, 0xF0\n"
+"je _4\n"
+"mov ah, 0x70\n"
+"push ax\n"
+"popf\n"
+"pushf\n"
+"pop ax\n"
+"and ah, 0x70\n"
+"jz _4\n"
+"popf\n"
+"sti\n"
+"mov ah, 0x02\n"
+"mov al, [sectors]\n"
+"mov cx, 0x0002\n"
+"mov bx, str2\n"
+"int 0x13\n"
+"\n"
+"mov cx, end2-str2\n"
+"mov si, str2\n"
+"cld\n"
+"_1:\n"
+"        xor eax, eax\n"
+"        lodsb\n"
+"        mov ebx, [crcval]\n"
+"        xor eax, ebx\n"
+"        and eax, 0x000000FF\n"
+"        push cx\n"
+"        mov cx, 8\n"
+"_2:\n"
+"        shr eax, 1\n"
+"        jnc _3\n"
+"        xor eax, [crcpoly]\n"
+"_3:\n"
+"        loop _2\n"
+"        shr ebx, 8\n"
+"        xor eax, ebx\n"
+"        mov [crcval], eax\n"
+"        pop cx\n"
+"        loop _1\n"
+"        mov eax, [crcval]\n"
+"        xor eax, 0xFFFFFFFF\n"
+"        mov [crcval], eax\n"
+"        cmp eax, [crc32]\n"
+"        jnz _4\n"
+"_5:\n"
+"mov ax, 0x0300\n"
+"xor bx, bx\n"
+"int 0x10\n"
+"\n"
+"mov ax, 0x1301\n"
+"mov bx, 0x0007\n"
+"mov cx, end2-str2\n"
+"mov bp, str2\n"
+"int 0x10\n"
+"_4:\n"
+"cli\n"
+"hlt\n"
+"crc32:\n"
+"dd 0x%X\n"
+"crcpoly:\n"
+"        dd 0xEDB88320\n"
+"crcval:\n"
+"        dd 0xFFFFFFFF\n"
+"sectors:\n"
+"db %d\n"
+"end:\n"
+"times 510-($-$$) db 0\n"
+"db 0x55, 0xaa\n"
+"str2:\n";
 
-"mov cx, end2-str2",
-"mov si, str2",
-"cld",
-"_1:",
-"        xor eax, eax",
-"        lodsb",
-"        mov ebx, [crcval]",
-"        xor eax, ebx",
-"        and eax, 0x000000FF",
-"        push cx",
-"        mov cx, 8",
-"_2:",
-"        shr eax, 1",
-"        jnc _3",
-"        xor eax, [crcpoly]",
-"_3:",
-"        loop _2",
-"        shr ebx, 8",
-"        xor eax, ebx",
-"        mov [crcval], eax",
-"        pop cx",
-"        loop _1",
-"        mov eax, [crcval]",
-"        xor eax, 0xFFFFFFFF",
-"        mov [crcval], eax",
-"        cmp eax, [crc32]",
-"        jnz _4",
-"_5:",
-"mov ax, 0x0300",
-"xor bx, bx",
-"int 0x10",
-
-"mov ax, 0x1301",
-"mov bx, 0x0007",
-"mov cx, end2-str2",
-"mov bp, str2",
-"int 0x10",
-"_4:",
-"crc32:",
-//dd 0xololo, pos 49
-"crcpoly:",
-"        dd 0xEDB88320",
-"crcval:",
-"        dd 0xFFFFFFFF",
-"sectors:",
-//db sectors, pos 54
-"end:",
-"times 510-($-$$) db 0",
-"db 0x55, 0xaa",
-"str2:",
-//db 0xololo\n db 0xololo\n ..., pos 58
-"end2:",
-"        db 0"
-//times 512*(sectors+1)-($-$$) db 0, total 61
-};
+char* code2="end2:\n"
+"        db 0\n"
+"times %d-($-$$) db 0";
+//512*(sectors+1)
 
 uint_least32_t Crc32(unsigned char *buf, size_t len)
 {
@@ -107,7 +125,12 @@ int main(int argc, char* argv[]){
                 printf("%s\n","No file");
                 return 1;
         }
-        int read=fread(buffer, 1, 16384, f);
+	fseek(f, 0, SEEK_END);
+	if(ftell(f)>30720){
+		printf("%s\n", "File too long");
+	}
+	fseek(f, 0, SEEK_SET);
+        int read=fread(buffer, 1, 30720, f);
         fclose(f);
 	int sectors=(read+1)>>9;
 	if((read+1)&511){
@@ -118,23 +141,12 @@ int main(int argc, char* argv[]){
 		printf("%s\n","Can't write assembler source");
 		return 1;
 	}
-	int i;
-	for(i=0; i<61; ++i){
-		fprintf(f,"%s\n",strings[i]);
-		if(i==49){
-			fprintf(f, "dd 0x%X\n", Crc32(buffer, read));
-		}
-		if(i==54){
-			fprintf(f,"db %d\n", sectors);
-		}
-		if(i==58){
-			int j;
-			for(j=0;j<read;++j){
-				fprintf(f,"db 0x%X\n",buffer[j]);
-			}
-		}
+	fprintf(f,code,Crc32(buffer, read),sectors);
+	int j;
+	for(j=0;j<read;++j){
+		fprintf(f,"db 0x%X\n",buffer[j]);
 	}
-	fprintf(f,"times %d-($-$$) db 0", 512*(sectors+1));
+	fprintf(f, code2, 512*(sectors+1));
 	fclose(f);
 	system("nasm check -o checkbin");
 	return 0;
