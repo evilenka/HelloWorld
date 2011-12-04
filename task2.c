@@ -2,7 +2,7 @@
 
 void insert(int* a, int n, int number){
 	int i;
-	for(i=n-2;i>=0;--i){
+	for(i=n-1;i>=0;--i){
 		if(a[i]>number){
 			a[i+1]=a[i];
 		}
@@ -14,11 +14,11 @@ void insert(int* a, int n, int number){
 	a[0]=number;
 }
 
-int printarr(int * a, int n){
+int printarr(FILE* file, int * a, int n){
 	int i;
 	int ok=1;
 	for(i=0; i<n; ++i){
-		if(printf("%d\n", a[i])==0){
+		if(fprintf(file, "%d\n", a[i])==0){
 			ok=0;
 		}
 	}
@@ -30,10 +30,9 @@ int main(int argc, char* argv[]){
 	if(ints==NULL){
 		return 1; //no memory
 	}
-
 	int n=0;
 	int i;
-	for(i=1; i<argc; ++i){
+	for(i=1; i<argc-1; ++i){
 		int ok=1;
 		int complete=0;
 		FILE* file=fopen(argv[i],"r");
@@ -42,25 +41,40 @@ int main(int argc, char* argv[]){
 			continue;
 		}
 		complete++;
-		int number;
-		if(fscanf(file,"%d", &number)==0){
+		int number=0;
+		int x;
+		while(feof(file)==0&&fscanf(file,"%d", &x)!=0){
+			number++;
+		}
+		if(feof(file)==0){
 			ok=0;
 		}
 		else{
 			complete++;
-			n++;
+			number--;
 		}
 		switch(complete){
 			case 2:
-				insert(ints, n, number);
+				if(fseek(file, 0, SEEK_SET)==0){
+					ints=(int*)realloc(ints, (n+number)*sizeof(int));
+					while(ints!=NULL&&fscanf(file, "%d", &x)&&feof(file)==0){
+						insert(ints, n, x);
+						++n;
+					}
+				}
 			case 1:
 				fclose(file);
 		}
 	}
 	int ok=1;
-	if(printarr(ints, n)==1){
+	FILE* file=fopen(argv[argc-1],"w");
+	if(file==NULL){
+		return 2;
+	}
+	if(printarr(file, ints, n)==1){
 		ok=0;
 	}
+	fclose(file);
 	free(ints);
 	if(ok){
 		return 0; //ok
