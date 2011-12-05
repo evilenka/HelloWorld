@@ -1,14 +1,19 @@
 cpu 386
+
 global _multiply
-section .text	
+extern _writedouble
+
+section .text
 
 _multiply:
-;	xor eax, eax
-		
-;push bp
-;mov bp, sp
-finit
-fld qword [esp+4]
-fimul dword [esp+12]
-;pop bp
-ret 
+	push ebp
+	mov ebp, esp
+	sub esp, byte 8
+	finit
+	fld qword [ebp+8]
+	fimul dword [ebp+16]
+	fstp qword [ebp-8]
+	call _writedouble
+	mov esp, ebp
+	pop ebp
+	ret

@@ -1,13 +1,13 @@
 #include <stdio.h>
 
-extern double multiply(double, int);
+void multiply(double, int);
 
-void print(double f){
+extern void writedouble(double f){
 	printf("%f", f);
 }
 
 
 int main(){
-	print(multiply(1.234,2));
+	multiply(1.234,2);
 	return 0;
 }
