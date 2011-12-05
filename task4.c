@@ -116,18 +116,19 @@ uint_least32_t Crc32(unsigned char *buf, size_t len)
 
 int main(int argc, char* argv[]){
         if(argc==1){
-                printf("%s\n","No args");
+                fprintf(stderr,"No args\n");
                 return 1;
         }
-        unsigned char buffer[16384];
+        unsigned char buffer[30720];
         FILE* f=fopen(argv[1],"r");
         if(f==NULL){
-                printf("%s\n","No file");
+                fprintf(stderr,"No file\n");
                 return 1;
         }
 	fseek(f, 0, SEEK_END);
 	if(ftell(f)>30720){
-		printf("%s\n", "File too long");
+		fprintf(stderr, "File too long\n");
+		return 1;
 	}
 	fseek(f, 0, SEEK_SET);
         int read=fread(buffer, 1, 30720, f);
@@ -138,15 +139,30 @@ int main(int argc, char* argv[]){
 	}
 	f=fopen("check", "w");
 	if(f==NULL){
-		printf("%s\n","Can't write assembler source");
+		fprintf(stderr,"Can't write assembler source\n");
 		return 1;
 	}
-	fprintf(f,code,Crc32(buffer, read),sectors);
+	if(fprintf(f,code,Crc32(buffer, read),sectors) > 0){
+	}
+	else{
+		fprintf(stderr,"Can't write assembler source\n");
+		exit(1);
+	}
 	int j;
 	for(j=0;j<read;++j){
-		fprintf(f,"db 0x%X\n",buffer[j]);
+		if(fprintf(f,"db 0x%X\n",buffer[j]) > 0){
+		} 
+		else {
+			fprintf(stderr, "Can't write assembler source\n");
+			exit(1);
+		}
 	}
-	fprintf(f, code2, 512*(sectors+1));
+	if(fprintf(f, code2, 512*(sectors+1)) > 0){
+	}
+	else{
+		fprintf(stderr,"Can't write assembler source\n");
+		exit(1);
+	}
 	fclose(f);
 	system("nasm check -o checkbin");
 	return 0;
