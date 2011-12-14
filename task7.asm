@@ -7,7 +7,7 @@ mov es, ax
 sti
 
 mov ax, 0x0201
-xor dx, dx
+;xor dx, dx
 mov cx, 0x0002
 mov bx, 0x7e00
 int 0x13

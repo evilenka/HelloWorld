@@ -1,5 +1,4 @@
-#include <stdio.h>
 
 void print(){
-	printf("%c",'1');
+	*(short*)0xB8000=0x0731;
 }
