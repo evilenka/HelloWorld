@@ -30,6 +30,7 @@ int main(int argc, char* argv[]){
 	if(ints==NULL){
 		return 1; //no memory
 	}
+	int capacity=argc-1;
 	int n=0;
 	int i;
 	for(i=1; i<argc-1; ++i){
@@ -43,27 +44,23 @@ int main(int argc, char* argv[]){
 		complete++;
 		int number=0;
 		int x;
-		while(feof(file)==0&&fscanf(file,"%d", &x)!=0){
+		while(fscanf(file,"%d", &x)!=0 && feof(file)==0){
+			if(n+1 <= capacity){
+				capacity=capacity<<1;
+				ints=(int*)realloc(ints, capacity*sizeof(int));
+			}
+			if(ints!=NULL){
+				insert(ints, n, x);
+				n++;
+			}
 			number++;
 		}
 		if(feof(file)==0){
 			ok=0;
+			n-=number;
 		}
-		else{
-			complete++;
-			number--;
-		}
-		switch(complete){
-			case 2:
-				if(fseek(file, 0, SEEK_SET)==0){
-					ints=(int*)realloc(ints, (n+number)*sizeof(int));
-					while(ints!=NULL&&fscanf(file, "%d", &x)&&feof(file)==0){
-						insert(ints, n, x);
-						++n;
-					}
-				}
-			case 1:
-				fclose(file);
+		if(complete){
+			fclose(file);
 		}
 	}
 	int ok=1;
