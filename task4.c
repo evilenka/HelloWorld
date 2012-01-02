@@ -88,10 +88,10 @@ char* code2="end2:\n"
 "times %d-($-$$) db 0";
 //512*(sectors+1)
 
-uint_least32_t Crc32(unsigned char *buf, size_t len)
+unsigned int Crc32(unsigned char *buf, size_t len)
 {
-    uint_least32_t crc_table[256];
-    uint_least32_t crc; int i, j;
+    unsigned int crc_table[256];
+    unsigned int crc; int i, j;
  
     for (i = 0; i < 256; i++)
     {
