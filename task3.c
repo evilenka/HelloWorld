@@ -16,8 +16,12 @@ int main(int argc, char* argv[]){
 		fprintf(stderr,"Can't seek\n");
 		exit(1);
 	}
-	unsigned char prev=fgetc(f);
-	unsigned char c=fgetc(f);
+	int prev=fgetc(f);
+	int c=fgetc(f);
+	if(prev==EOF||c==EOF){
+		fprintf(stderr,"Unexpected EOF\n");
+		exit(1);
+	}
 	while(feof(f)==0){
 		if(c==0xaa && prev==0x55){
 			if(fseek(f,-512,SEEK_CUR)!=0){
@@ -33,19 +37,21 @@ int main(int argc, char* argv[]){
 				continue;
 			}
 			char name[10];
-			sprintf(name, "boot%d", n);
+			snprintf(name, 10, "boot%d", n);
 			FILE* boot=fopen(name, "w");
 			if(boot==NULL){
 				prev=c;
 				c=fgetc(f);
 				continue;
 			}
-			fwrite(buffer, sizeof(char), 512, boot);
+			int written = fwrite(buffer, sizeof(char), 512, boot);
 			fclose(boot);
-			char command[100];
-			sprintf(command, "ndisasm %s > %sdisasm",name,name);
-			system(command);
-			++n;
+			if(written==512){
+				char command[100];
+				snprintf(command, 100, "ndisasm %s > %sdisasm",name,name);
+				system(command);
+				++n;
+			}
 		}
 		prev=c;
 		c=fgetc(f);
