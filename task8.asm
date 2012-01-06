@@ -27,11 +27,11 @@ _1:
 	mov ds, ax
 
 	mov ss, ax
-	mov esp, 0x87ff
+	mov esp, 0xffff
 	
 	call ccode
 
-;	int 0
+	int 5
 
 stop:
 	cli

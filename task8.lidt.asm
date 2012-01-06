@@ -16,8 +16,9 @@ _idtloading:
 	ret
 
 _printGPF:
-;	cli
-;	hlt
-;	jmp _printGPF
 	call _printing
+_printGPF_loop:
+	cli
+	hlt
+	jmp _printGPF_loop
 	iret
