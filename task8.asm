@@ -14,9 +14,11 @@ int 0x13
 
 lgdt [structs]
 
+cli
 mov eax, cr0
 or eax, 1
 mov cr0, eax
+sti
 
 jmp 8:_1
 
