@@ -1,22 +1,22 @@
 cpu 386
 bits 32
 
-global _idtloading
-global _printGPF
+global idtloading
+global printGPF
 
-extern _printing
+extern printing
 
 section .text
 
-_idtloading:
+idtloading:
 	push ebp
 	mov ebp, esp
 	lidt [ebp+10]
 	pop ebp
 	ret
 
-_printGPF:
-	call _printing
+printGPF:
+	call printing
 _printGPF_loop:
 	cli
 	hlt
